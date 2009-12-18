@@ -9,7 +9,7 @@ import os.path
 import shutil
 import subprocess
 
-DEBUG = True
+DEBUG = False
 
 # remote paths
 BASE = r"\\Bigfoot\Releases\9\9.12\9.12.0000.60"
@@ -57,22 +57,21 @@ for pkg in packages:
     local_path = os.path.join(GENERATED, pkg)
     local_setup = os.path.join(local_path, setup_file)
     local_msi = local_setup.replace("_Setup.exe", ".msi", 1)
+    print("## processing %s" % setup_file)
     if DEBUG:
-        print("setup_file: %s" % setup_file)
         print("remote_file: %s" % remote_file)
         print("local_path: %s" % local_path)
         print("local_setup: %s" % local_setup)
         print("local_msi: %s" % local_msi)
-        print("~~~~")
     if not os.path.exists(local_path):
         os.makedirs(local_path)
         shutil.copy(remote_file, local_setup)
     else:
-        print("error?  File already exists: %s" % local_setup)
+        print("warning: file already exists: %s" % local_setup)
     cmd = local_setup + " /extract"
-    print("cmd: %s" % cmd)
     returncode = subprocess.check_call(cmd)
     if returncode != 0:
+        # TODO return the returncode?
         print("possible error: %s" % cmd)
     else:
         try:
@@ -80,7 +79,7 @@ for pkg in packages:
 #            shutil.move(local_msi, COMMON_STORE)
 #            shutil.rmtree(local_path)
         except:
-            print("Something broke doing the [re]move!")
+            print("something broke doing the [re]move!")
 
 # TODO make this a command-line option.  I may want to keep the files around.
 #
