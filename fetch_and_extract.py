@@ -9,12 +9,14 @@ import os.path
 import shutil
 import subprocess
 
+DEBUG = True
+
 # remote paths
-R_BASE = r"\\Bigfoot\Releases\9\9.12\9.12.0000.60"
-R_CD1 = os.path.join(R_BASE, "CD1")
-R_CD2 = os.path.join(R_BASE, "CD2")
-#R_CD3 = os.path.join(R_BASE, "CD3")
-R_UTILS = os.path.join(R_BASE, R_CD2, "utils")
+BASE = r"\\Bigfoot\Releases\9\9.12\9.12.0000.60"
+CD1 = os.path.join(BASE, "CD1")
+CD2 = os.path.join(BASE, "CD2")
+#CD3 = os.path.join(BASE, "CD3")
+UTILS = os.path.join(BASE, CD2, "utils")
 
 # local paths
 CWD = os.getcwd()
@@ -24,121 +26,70 @@ COMMON_STORE = os.path.join(CWD, "common_store")
 
 packages = {
         # CD1
-        "AgentSupport" : [
-            os.path.join(R_CD1, "AgentSupport_Setup.exe"),
-            os.path.join(GENERATED, "AgentSupport", "AgentSupport_Setup.exe"),
-            ],
-
-        "PerformanceSuite" : [
-            os.path.join(R_CD1, "PerformanceSuite_Setup.exe"),
-            os.path.join(GENERATED, "PerformanceSuite", "PerformanceSuite_Setup.exe"),
-            ],
-
+        "AgentSupport" : os.path.join(CD1, "AgentSupport_Setup.exe"),
+        "PerformanceSuite" : os.path.join(CD1, "PerformanceSuite_Setup.exe"),
         # CD2
-        "Analytics" : [
-            os.path.join(R_CD2, "Analytics_Setup.exe"),
-            os.path.join(GENERATED, "Analytics", "Analytics_Setup.exe"),
-            ],
-
-        "CentricityWebApplications" : [
-            os.path.join(R_CD2, "CentricityWebApplications_Setup.exe"),
-            os.path.join(GENERATED, "CentricityWebApplications", "CentricityWebApplications_Setup.exe"),
-            ],
-
-        "Centricity" : [
-            os.path.join(R_CD2, "Centricity_Setup.exe"),
-            os.path.join(GENERATED, "Centricity", "Centricity_Setup.exe"),
-            ],
-
-        "Server" : [
-            os.path.join(R_CD2, "Server_Setup.exe"),
-            os.path.join(GENERATED, "Server", "Server_Setup.exe"),
-            ],
-
-        "SpeechProcessingClient" : [
-            os.path.join(R_CD2, "SpeechProcessingClient_Setup.exe"),
-            os.path.join(GENERATED, "SpeechProcessingClient", "SpeechProcessingClient_Setup.exe"),
-            ],
-
-        "SpeechServerService" : [
-            os.path.join(R_CD2, "SpeechServerService_Setup.exe"),
-            os.path.join(GENERATED, "SpeechServerService", "SpeechServerService_Setup.exe"),
-            ],
-
-        "WMWrapperService" : [
-            os.path.join(R_CD2, "WMWrapperService_Setup.exe"),
-            os.path.join(GENERATED, "WMWrapperService", "WMWrapperService_Setup.exe"),
-            ],
-
+        "Analytics" : os.path.join(CD2, "Analytics_Setup.exe"),
+        "CentricityWebApplications" : os.path.join(CD2, "CentricityWebApplications_Setup.exe"),
+        "Centricity" : os.path.join(CD2, "Centricity_Setup.exe"),
+        "Server" : os.path.join(CD2, "Server_Setup.exe"),
+        "SpeechProcessingClient" : os.path.join(CD2, "SpeechProcessingClient_Setup.exe"),
+        "SpeechServerService" : os.path.join(CD2, "SpeechServerService_Setup.exe"),
+        "WMWrapperService" : os.path.join(CD2, "WMWrapperService_Setup.exe"),
         # CD2/utils
-        "ADIT" : [
-            os.path.join(R_UTILS, "ADIT_Setup.exe"),
-            os.path.join(GENERATED, "ADIT", "ADIT_Setup.exe"),
-            ],
+        "ADIT" : os.path.join(UTILS, "ADIT_Setup.exe"),
+        "AGMS" : os.path.join(UTILS, "AGMS_Setup.exe"),
+        "DADI" : os.path.join(UTILS, "DADI_Setup.exe"),
+        "DBMigration" : os.path.join(UTILS, "DBMigration_Setup.exe"),
+        "EvaluationConsistencyCheck" : os.path.join(UTILS, "EvaluationConsistencyCheck_Setup.exe"),
+       }
 
-        "AGMS" : [
-            os.path.join(R_UTILS, "AGMS_Setup.exe"),
-            os.path.join(GENERATED, "AGMS", "AGMS_Setup.exe"),
-            ],
 
-        "DADI" : [
-            os.path.join(R_UTILS, "DADI_Setup.exe"),
-            os.path.join(GENERATED, "DADI", "DADI_Setup.exe"),
-            ],
-
-        "DBMigration" : [
-            os.path.join(R_UTILS, "DBMigration_Setup.exe"),
-            os.path.join(GENERATED, "DBMigration", "DBMigration_Setup.exe"),
-            ],
-
-        "EvaluationConsistencyCheck" : [
-            os.path.join(R_UTILS, "EvaluationConsistencyCheck_Setup.exe"),
-            os.path.join(GENERATED, "EvaluationConsistencyCheck", "EvaluationConsistencyCheck_Setup.exe"),
-            ],
-        }
-
-if not os.path.exists(GENERATED):
-    os.mkdir(GENERATED)
-
-for paths in packages.values():
-    if not os.path.exists(paths[1]):
-        os.makedirs(os.path.dirname(paths[1]))
-        shutil.copy(paths[0], paths[1])
+for dir in GENERATED, COMMON_STORE:
+    if os.path.exists(dir):
+        print("warning: found directory %s" % dir)
     else:
-        print("error?  File already exists: %s" % paths[1])
+        os.mkdir(dir)
 
-    cmd = paths[1] + " /extract"
+for pkg in packages:
+    setup_file = os.path.basename(packages[pkg])
+    remote_file = packages[pkg]
+    local_path = os.path.join(GENERATED, pkg)
+    local_setup = os.path.join(local_path, setup_file)
+    local_msi = local_setup.replace("_Setup.exe", ".msi", 1)
+    if DEBUG:
+        print("setup_file: %s" % setup_file)
+        print("remote_file: %s" % remote_file)
+        print("local_path: %s" % local_path)
+        print("local_setup: %s" % local_setup)
+        print("local_msi: %s" % local_msi)
+        print("~~~~")
+    if not os.path.exists(local_path):
+        os.makedirs(local_path)
+        shutil.copy(remote_file, local_setup)
+    else:
+        print("error?  File already exists: %s" % local_setup)
+    cmd = local_setup + " /extract"
+    print("cmd: %s" % cmd)
     returncode = subprocess.check_call(cmd)
     if returncode != 0:
         print("possible error: %s" % cmd)
+    else:
+        try:
+            shutil.copy(local_msi, COMMON_STORE)
+#            shutil.move(local_msi, COMMON_STORE)
+#            shutil.rmtree(local_path)
+        except:
+            print("Something broke doing the [re]move!")
 
-
-#if not os.path.exists(COMMON_STORE):
-#    os.mkdir(COMMON_STORE)
+# TODO make this a command-line option.  I may want to keep the files around.
 #
-#for pkg in 
-#
-#    self.
-
-
-
-
-
-
-#setup_files = [
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD1\AgentSupport_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD1\PerformanceSuite_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\Analytics_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\CentricityWebApplications_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\Centricity_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\Server_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\SpeechProcessingClient_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\SpeechServerService_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\WMWrapperService_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\utils\ADIT_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\utils\AGMS_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\utils\DADI_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\utils\DBMigration_Setup.exe",
-#    r"\\Bigfoot\Releases\9\9.12\9.12.0000.60\CD2\utils\EvaluationConsistencyCheck_Setup.exe",
-#    ]
+# Not a great idea to delete COMMON_STORE until after I've done the installer
+# work.  But os.rmdir() won't delete a directory with contents anyway.
+#for dir in GENERATED, COMMON_STORE:
+#for dir in GENERATED,: #COMMON_STORE:
+#    try:
+#        os.rmdir(dir)
+#    except OSError:
+#        print("warning: '%s' not empty, cannot be removed" % dir)
 
