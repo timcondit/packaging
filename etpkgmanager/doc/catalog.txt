@@ -1,19 +1,53 @@
 [catalog braindump]
 
 Catalogs are the heart of etpkgmanager.  They describe what is and what could
-be.  They are the reference catalog, or refcat, and the system catalog, or
-syscat.
+be.  There are two types: the reference catalog, or refcat, and the system
+catalog, or syscat.
 
 The refcat is a description of every cataloged component that has been
-released from a manufacturer.  It may include multiple products and multiple
-versions of each product.  It is comprehensive: if it's not in the refcat, it
-is not a known released component.  The refcat is a write-only resource that
-is designed to be maintained by the software manufacturer.  As software
-(patches, full releases, whatever) is released, it is added to the refcat, and
-a new catalog version is declared.  Each version of refcat includes install
-information about all patched components, along with the target systems for
-such a patch.
+released from a manufacturer, organized by product.  It may include multiple
+products and multiple versions of each product.  It is comprehensive: if it's
+not in the refcat, it is not a known released component.  The refcat is a
+write-only resource that is designed to be maintained by the software
+manufacturer.  As software is released (full releases, patches, whatever), it
+is added to the refcat, and a new catalog version is declared.  The lifespan
+of the refcat is indefinite.
 
+EPM is a distributed package management tool, and the refcat is the closest
+thing EPM has to a centralized structure.
+
+
+The syscat is generated and maintained on the host machine.  It describes
+changes to the system over time, and by definition is not comprehensive.
+[Footnote: to be pedantic, if only one version of one or more products has
+been released, it may be comprehensive, but that is only by circumstance, and
+not by design.]  Every time there is a managed change to the system, the new
+patch (or installer) data is appended to the request.  The lifespan of the
+syscat is indefinite, but as upgrades occur, older versions should be tagged
+as inactive.
+
+A file is a component by virtue of being cataloged in the refcat.  The syscat
+may contain both known components and unknown files.  On an installation (or
+more) with no changes from the default, the contents of the syscat should be a
+proper subset of the refcat.  That is, every component of the syscat should be
+recognized as a released component.
+
+--
+
+<this belongs in a components section>
+Within the catalogs, components are formally identified by their hexdigest
+based on the component's content, but applications are identified by a GUID,
+which is unbound from any particular content.  This is so if a component,
+which may be duplicated in multiple places, is used in more than one
+application, they are logically separated and maintained separately.  The same
+component may be used in more than one application.  Having to update a binary
+in one place should not force you to update it everywhere.  This prevents that
+unfortunate occurence.
+</this belongs in a components section>
+
+--
+
+<this belongs in a dependency section>
 For example, a patch may include a new ChanMgrSvc.exe and ChanMgrSvc.pdb.
 These belong to the Envision Server.  ChanMgrSvc.exe depends on Envision
 Server being installed (possibly identified by the existence of the Envision
@@ -21,25 +55,7 @@ Server syscat), and ChanMgrSvc.pdb depends on the specific version of
 ChanMgrSvc.exe being installed.  So the refcat needs to include information
 about the application-level dependencies, along with file-level dependencies.
 Note: we're only concerned with hard, one-directional dependencies.
-
-EPM is a distributed package management tool, and the refcat is the closest
-thing EPM has to a centralized structure.
-
-
-The syscat is generated on the host machine.  It describes the state of the
-system, and by definition is not comprehensive.  [Footnote: to be pedantic, if
-only one version of one or more products has been released, it may be
-comprehensive, but that is only by circumstance, and not by design.]  It is a
-description of the system at some point in time.  Every time there is a
-managed change to the system, a new syscat is generated (TODO or appended to,
-open question).  If necessary, the syscat can roll back a system to it's
-former state.
-
-A file is a component by virtue of being cataloged in the refcat.  The syscat
-may contain both known components and unknown files.  On an installation (or
-more) with no changes from the default, the contents of the syscat should be a
-proper subset of the refcat.  That is, every component of the syscat should be
-recognized as a released component.
+</this belongs in a dependency section>
 
 --
 
@@ -50,12 +66,6 @@ application root.)  The values attached to the hexdigest keys list all the
 places where a particular component should be updated.  These paths are
 relative to the installation directory of a particular application.
 
-<aside>
-The catalogs are not designed to be used to find software to install.  (Why
-not?)
-</aside>
-
-
 
 The basic file format of the catalogs are ...
 
@@ -63,52 +73,31 @@ The catalogs are JSON-formatted text.  It's easy to read and write, and easy
 to serialize.  Note, JSON does not support hex digits, so the digests are
 encoded as strings.
 
-Q: Should each product have it's own catalog?  Something to consider.
-A: It would make it simpler to identify which products are expected.  And it
-   would keep the catalogs shorter, since there would not be a single refcat
-   for every patch everywhere.  On the other hand, with multiple catalogs,
-   there is the possibility of duplicate hexdigits.  On the face of it, that
-   seems bad.  But is it?  I don't see why it is.  It just means that the same
-   file contents are present on more than one system.  They're completely
-   different applications!  It doesn't matter.
-
-   A major reason to separate them is that it changes the way you think about
-   them and work with them.  With, say, a Server catalog and an AgentSupport
-   catalog, you can clone them separately.  That's huge.  It's big enough to
-   go forward with it.  Maybe we'll need a lightweight metacatalog of all
-   applications (appcat?), but I don't see a need for it right now.
-
-   Consider this scenario: we've got a refcat that lists one component, and
-   two applications in which it's to be applied.  What if only one of the
-   applications is being updated?  Sure, it's easy to say "only update
-   application X, not Y", but it's an unnecessary step.  Another reason to
-   separate them at the application boundary.
-
-   Whether we have one or multiple catalogs, it seems clear that the refcat
-   and syscat should both use the same scheme.  It doesn't make a lot of
-   sense to have, for example, a single refcat and multiple syscats.
-
-
-envision_server.refcat:
+envision.refcat:
 """
 {
-    "version": <incrementing integer starting from 0>
-    "components":
+    # header
+    "appID": <GUID>
     {
-        "hexdigest1":
-        [
-            "first relative path to component1"
-            "second relative path to component1"
-            "third relative path to component1"
-        ]
-        "hexdigest2":
-        [
-            "relative path to component2"
-        ]
-        "hexdigest3":
-        [
-            ...
-        ]
+        "catalog version": <incrementing integer starting from 0>
+        "patch version": <M.m.SPpn.bn>
+        "components":
+        {
+            "hexdigest1":
+            [
+                "first relative path to component1"
+                "second relative path to component1"
+                "third relative path to component1"
+            ]
+                "hexdigest2":
+            [
+                "relative path to component2"
+            ]
+                "hexdigest3":
+            [
+                ...
+            ]
+        }
     }
     "version": <version++>
     "components":
@@ -162,4 +151,70 @@ TODO
 If it turns out that we need more information for each path, the lists will
 have to be turned into JSON objects (equivalent to, among other things, Python
 dictionaries).
+
+----
+
+Workflow (patching in practice):
+
+- do MSI install
+- take inventory (?)
+
+(some time later ...)
+
+- push patch to machine
+- run epm:
+    for each component in the patch:
+        verify digest (cmp w/ catalog update snip)
+        get it's system install locations [from ...]
+
+        // assume single file locations for now
+        //
+        // we need to search for the file-to-patch based on it's informal
+        // name, since we don't know what digest is installed on the system.
+        // Edit: is that true?  Should we not be able to determine the digest
+        // from the history?
+        look for the file-to-patch in all installed locations
+
+        if found:
+            // digest should be the same everywhere
+            calculate digest for the file-to-patch
+
+            // Look in the syscat first.  If it's not found there, look for it
+            // in the refcat.  If found, should we amend the syscat to include
+            // whatever patch contains that component?  Or should we treat
+            // this one as an unknown file?  If it's not found in the refcat,
+            // it's entirely unknown, but if it's in one and not the other,
+            // we've got a situation.  This is a specific case of a general
+            // class of problem: a file is not known to the syscat but is
+            // known to the syscat is found on the user's system.
+            look for the digest in the refcat [or syscat or both?]
+            if found:
+                // should we do this before checking the refcat?
+                look for the file in the cache
+
+                if found:
+                    // validation first, then patch txn
+                    continue
+
+                else:
+                    // It's in the refcat, so it's a known component, but not
+                    // in the cache.  This is not ideal, but not awful.  Just
+                    // get another copy of the file from the source cache.
+                    // This could be an automatic download depending on local
+                    // configuration.
+                    //
+                    // An alternative is to ask nearby peers for the file
+                    // first, before hitting the tubes.  That could be added
+                    // later, and would be a nice addition to the distributed
+                    // and essentially cooperative nature of the installer.
+                    download replacement from source cache to local cache
+            else:
+                // Open issue: depending on where we're looking for the file,
+                // this could be a seriously broken scenario.
+        else:
+            // Assuming a single location, how could we wind up here?  We're
+            // looking for a file by its informal name, since we don't know
+            // what digest is installed on the system already.  But once we
+            // find the file, we need to ensure that it's known to the syscat
+            // or the refcat.
 
