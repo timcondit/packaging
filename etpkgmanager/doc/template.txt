@@ -1,0 +1,19 @@
+
+[what is it?]
+There are application templates, and patch templates.  Both are XML files that
+describe changes that may be made to the system.  The application template
+includes references to all components that may be installed for a particular
+version of a particular application.  The component references are GUIDs.  The
+hexdigests that the GUIDs refer to are a separate matter.  The reason for this
+is ...
+
+The application template is "the last word" on what an application should look
+like.  It describes:
+
+* an application's version
+* all possible files that may be installed on the version
+* 
+
+[what does it do?]
+
+[what does it look like?]

@@ -1,0 +1,28 @@
+
+What is a component?
+
+A component is a known (released) file that is identified uniquely identified
+by it's SHA-1 hexdigest.  Each application which contains the component
+assigns it's own GUID to the component.
+
+The hexdigest is calculated from hashing the contents of the file itself.  The
+GUID is independent of the file and its contents, and is used as a reference
+to the file, in lieu of a filename.  The reason for this is that the same file
+(or at least a file with the exact same contents) may be used in multiple
+different places within an application, without having to track the file
+according to its path relative to the application root.
+
+Each application that installs the same component (again, shorthand for a file
+with possibly variable names, but with exactly the same content) will refer to
+the file by a different GUID.  Where this gets weird is that while the GUID is
+different, the hexdigest is identical.  In other words, when referring to the
+component itself, the hexdigest is the right way to identify it.  When
+referring to the component on a particular product install, the GUID and
+hexdigest uniquely identifies it.
+
+Again: there is only one hexdigest for a specific file regardless of the
+file's name or where it's installed (including in different applications), but
+each application will refer to the file by a different GUID.  This ensures
+that the file may be administered separately across applications but still
+refer to the same file where appropriate.
+
