@@ -1,0 +1,14 @@
+[component methods]
+* add(self, file)
+    - accepts a file to be hashed and cached
+    - returns a ...
+
+* 
+
+[cache methods]
+* are there any?
+
+[template methods]
+
+[catalog methods]
+

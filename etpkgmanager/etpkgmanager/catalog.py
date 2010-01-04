@@ -3,21 +3,34 @@
 __version__ = "0.1"
 __all__ = ["Catalog"]
 
+import component
 import hashlib
 import os.path
 import sys
 from optparse import OptionParser
 
 
-# hustle and flow:
-# 0. For now, the catalog is either with the package or it's not present.
-#    Later on we may want to specify the path to a config file on the
-#    command-line like I'm doing with common-buildtools.  Look for it in
-#    __init__().
+# A generic catalog is not much more than a collection of components
+# identified by SHA-1 hexdigest, the component's source path, and the catalog
+# itself.  This class iterates over a set of files or recursively from some
+# location in the local filesystem, generates components, and creates the
+# catalog.  Maybe it should also cache and verify each component.
 #
-# 1. There's no reason to make a distinction between the reference catalog and
-#    others.  There's nothing special about the reference catalog.  It's just
-#    guaranteed to be the latest version.
+# Something else to consider is "catalog discovery", where a catalog is
+# generated or modified by inspecting the local cache and any other peer
+# caches that the client has access to.
+
+# methods:
+#
+# make()
+#   description: 
+#   in: 
+#   out: 
+#
+# show()
+#   description: 
+#   in: 
+#   out: 
 
 class Catalog(object):
     """generate the component catalog"""

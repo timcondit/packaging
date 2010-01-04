@@ -1,0 +1,23 @@
+
+There should exist a set of installers and patches on one or more servers that
+are reachable by the client.  The installers may be used to install the
+software initially, but all files [^af] that may potentially be installed on a
+client machine should be cataloged and cached.  This is true 
+
+There may be multiple caches, from the central (manufacturer's) comprehensive
+cache, to a cache server onsite at a client's location, to local caches on the
+individual client machines.  The clients may query each other to find
+components, and if found, may delete them from it's own cache to save space.
+
+The central cache should be comprehensive.  It should contain every component
+released by a software manufacturer.  The system caches will be less complete,
+and the client caches will be least complete.  When looking for a component,
+it is expected that the local caches will be contacted first, then the system
+caches, and finally a central cache.
+
+
+
+
+== Footnotes
+[af] we may or may not want to deal with third party libraries, and things of
+    that nature
