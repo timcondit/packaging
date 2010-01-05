@@ -1,5 +1,8 @@
 """a tool for creating etpkgmanager components"""
 
+__version__ = "0.1"
+__all__ = ["Component"]
+
 import hashlib
 import os.path
 import sys
