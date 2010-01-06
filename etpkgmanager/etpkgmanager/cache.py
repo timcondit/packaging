@@ -8,6 +8,12 @@ import os, os.path
 import shutil
 import sys
 
+# TODO
+# 1. test the tuple input
+# 2. remove dups and clean up
+# 3. remove these comments and other pointless BS
+# 4. find a reasonable way to re-raise exceptions
+
 # In EPM, patches are stored in the cache.  The path to the cache is found in
 # the template.  The (possibly temporary) path to the files or components that
 # go into the template comes from the user.  When populating a cache, the
@@ -18,16 +24,20 @@ import sys
 # use this until we have the template in place
 CACHE_STUB = os.path.join(r"C:\\", "temp", "epm_cache")
 
-# cache tasks
+# cache tasks (in no particular order):
 #
 # 1. copy components from <somewhere> to cache
+#   [in the cache() method]
 # 2. query template (or get from user) (or use default) path to cache
+#   [we can't do this until we have a template]
 # 3. if duplicate (cached component already present), call component.py on
 #    both, verify identical, inform user [INFO]
 # 4. identify self to other cache servers
 # 5. find other cache servers or caches
-# 6. if component requested, locate and return or None
+# 6. if component requested, locate and return or None; how is the component
+#    requested?  Do we need this right now?
 # 7. add components to peer component catalog
+# 8. batch add components to the cache (recursively walking a directory?)
 
 class Cache(object):
     """DOCSTRING"""
@@ -38,10 +48,8 @@ class Cache(object):
         """DOCSTRING"""
         # Whether we're creating the component or a component is passed in,
         # the input is a two-tuple (_hash, _path).  _hash is the 40-bit
-        # hexdigest, and _path is the path to the file, optionally including
-        # it's name.  If _path is a directory, it must contain EXACTLY ONE
-        # file -- the contents to use to create a component.  Anything else is
-        # an unrecoverable error.
+        # hexdigest, and _path is either the path to the file, or a directory,
+        # which is processed recursively.
         _type = source.__class__.__name__
         _hash = _path = file_to_copy = None
 
@@ -50,26 +58,33 @@ class Cache(object):
                 (_hash, _path) = self.c.id(source)
                 # the component source file (with path)
                 file_to_copy = _path
+                cache_path = os.path.join(CACHE_STUB, _hash)
+                self._copy(file_to_copy, cache_path)
+
+            # recursively process all files in the directory
             elif os.path.isdir(source):
-                dirlist = os.listdir(source)
-                if len(dirlist) == 1:
-                    # fetch the zero'th (only) item from dirlist
-                    (_hash, _path) = self.c.id(os.path.join(source, dirlist[0]))
-                    file_to_copy = _path
-                else:
-                    sys.stderr.write("error: wrong number of files in directory: %s\n" % source)
-                    sys.exit(1) # until I come up with something else
-#                    raise
+                for root, dirs, files in os.walk(source):
+                    for file in files:
+                        (_hash, _path) = self.c.id(os.path.join(root, file))
+                        file_to_copy = _path
+                        cache_path = os.path.join(CACHE_STUB, _hash)
+                        self._copy(file_to_copy, cache_path)
+
             else:
                 sys.stderr.write("error: string is not a file or directory\n")
-                sys.exit(1) # until I come up with something else
+                # sys.exit() knocks me out of the interpreter :(
+                sys.exit(1)
 #                raise
+
         elif _type == 'tuple':
             # assume it's a two-tuple as returned from component; in this
             # case, it's already a component and just needs to be cached.
             try:
                 (_hash, _path) = source
                 file_to_copy = _path
+                cache_path = os.path.join(CACHE_STUB, _hash)
+#                print file_to_copy, cache_path
+                self._copy(file_to_copy, cache_path)
             except ValueError:
                 sys.stderr.write("error: this doesn't look like a component tuple\n")
                 sys.exit(1) # until I come up with something else
@@ -78,6 +93,7 @@ class Cache(object):
                 sys.stderr.write("something's broken in cache()!\n")
                 sys.exit(1) # until I come up with something else
 #                raise
+
         else:
             sys.stderr.write("unknown source: %s\n" % source)
             sys.exit(1) # until I come up with something else
@@ -95,6 +111,9 @@ class Cache(object):
         #   - if OSError (file or directory already exists):
         #       - TODO this is a configuration setting: be conservative for
         #         now; don't change anything; warn the user and continue
+        #   - else:
+        #       - TODO write an update to the screen or log (something like
+        #       "caching <hexdigest> component <filename>")
         # 2. copy file at _path to CACHE_STUB/<hexdigest>
         #   - this is DIFFERENT from what Dan and I talked about.  He wants to
         #     use the hexdigest as the file name.  I don't think that's a
@@ -107,12 +126,7 @@ class Cache(object):
         #     different places (the WI "duplicate file" feature), so this
         #     isn't foolproof either.
 
-#        print("CACHE_STUB: %s" % CACHE_STUB)
-#        print("_hash: %s" % _hash)
-#        print("file_to_copy: %s" % file_to_copy)
-        cache_path = os.path.join(CACHE_STUB, _hash)
-#        print("cache_path: %s" % cache_path)
-
+    def _copy(self, file_to_copy, cache_path):
         try:
             os.makedirs(cache_path)
         except OSError:
@@ -121,8 +135,7 @@ class Cache(object):
             #       for now; don't change anything; warn the user and continue
             sys.stderr.write("warning: could not make directory: %s\n" % cache_path)
         except:
-            sys.stderr.write("something's broken in cache()!\n")
+            sys.stderr.write("something's broken in _copy()!\n")
             sys.exit(1) # until I come up with something else
-#            raise
         shutil.copy2(file_to_copy, cache_path)
 
