@@ -27,7 +27,7 @@ CACHE_STUB = os.path.join(r"C:\\", "temp", "epm_cache")
 # cache tasks (in no particular order):
 #
 # 1. copy components from <somewhere> to cache
-#   [in the cache() method]
+#   [in the stash() method]
 # 2. query template (or get from user) (or use default) path to cache
 #   [we can't do this until we have a template]
 # 3. if duplicate (cached component already present), call component.py on
@@ -44,12 +44,27 @@ class Cache(object):
     def __init__(self):
         self.c = component.Component()
 
-    def cache(self, source):
+    def stash(self, source):
         """DOCSTRING"""
         # Whether we're creating the component or a component is passed in,
         # the input is a two-tuple (_hash, _path).  _hash is the 40-bit
         # hexdigest, and _path is either the path to the file, or a directory,
         # which is processed recursively.
+
+        # _copy is private to stash()
+        def _copy(file_to_copy, cache_path):
+            try:
+                os.makedirs(cache_path)
+            except OSError:
+                #   - if OSError (file or directory already exists):
+                #       - TODO this is a configuration setting: be conservative
+                #       for now; don't change anything; warn the user and continue
+                sys.stderr.write("warning: could not make directory: %s\n" % cache_path)
+            except:
+                sys.stderr.write("something's broken in _copy()!\n")
+                sys.exit(1) # until I come up with something else
+            shutil.copy2(file_to_copy, cache_path)
+
         _type = source.__class__.__name__
         _hash = _path = file_to_copy = None
 
@@ -59,7 +74,7 @@ class Cache(object):
                 # the component source file (with path)
                 file_to_copy = _path
                 cache_path = os.path.join(CACHE_STUB, _hash)
-                self._copy(file_to_copy, cache_path)
+                _copy(file_to_copy, cache_path)
 
             # recursively process all files in the directory
             elif os.path.isdir(source):
@@ -68,7 +83,7 @@ class Cache(object):
                         (_hash, _path) = self.c.id(os.path.join(root, file))
                         file_to_copy = _path
                         cache_path = os.path.join(CACHE_STUB, _hash)
-                        self._copy(file_to_copy, cache_path)
+                        _copy(file_to_copy, cache_path)
 
             else:
                 sys.stderr.write("error: string is not a file or directory\n")
@@ -78,19 +93,19 @@ class Cache(object):
 
         elif _type == 'tuple':
             # assume it's a two-tuple as returned from component; in this
-            # case, it's already a component and just needs to be cached.
+            # case, it's already a component and just needs to be stashd.
             try:
                 (_hash, _path) = source
                 file_to_copy = _path
                 cache_path = os.path.join(CACHE_STUB, _hash)
 #                print file_to_copy, cache_path
-                self._copy(file_to_copy, cache_path)
+                _copy(file_to_copy, cache_path)
             except ValueError:
                 sys.stderr.write("error: this doesn't look like a component tuple\n")
                 sys.exit(1) # until I come up with something else
 #                raise
             except:
-                sys.stderr.write("something's broken in cache()!\n")
+                sys.stderr.write("something's broken in stash()!\n")
                 sys.exit(1) # until I come up with something else
 #                raise
 
@@ -125,17 +140,4 @@ class Cache(object):
         #     On the other hand, the file may have different names in
         #     different places (the WI "duplicate file" feature), so this
         #     isn't foolproof either.
-
-    def _copy(self, file_to_copy, cache_path):
-        try:
-            os.makedirs(cache_path)
-        except OSError:
-            #   - if OSError (file or directory already exists):
-            #       - TODO this is a configuration setting: be conservative
-            #       for now; don't change anything; warn the user and continue
-            sys.stderr.write("warning: could not make directory: %s\n" % cache_path)
-        except:
-            sys.stderr.write("something's broken in _copy()!\n")
-            sys.exit(1) # until I come up with something else
-        shutil.copy2(file_to_copy, cache_path)
 
