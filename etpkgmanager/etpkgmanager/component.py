@@ -50,7 +50,7 @@ class Component(object):
                         #self.srcpath = os.path.normpath(_input)
                     except IOError:
                         sys.stderr.write("unhashable input: %s\n" % _input)
-                        raise
+#                        raise
             elif _name == 'file':
                 try:
                     to_hash = file(_input, 'rb').read()
@@ -58,7 +58,7 @@ class Component(object):
                     #self.srcpath = os.path.normpath(_input)
                 except IOError:
                     sys.stderr.write("unhashable input: %s\n" % component)
-                    raise
+#                    raise
             else:
                 print("something's broken in id()!")
                 return
@@ -69,8 +69,8 @@ class Component(object):
             except TypeError:
                 # http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
                 sys.stderr.write("unhashable input: %s\n" % component)
-                raise
+#                raise
 #        return self.fid
 #        return {self.fid: self.srcpath}
-        return [self.fid, self.srcpath]
+        return (self.fid, self.srcpath)
 
